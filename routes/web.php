@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AppController;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -34,7 +33,8 @@ Route::fallback(function (Request $request) {
         return view('react', [
             'shop' => $shop,
             'host' => $host,
-            'apiKey' => Context::$API_KEY
+            'apiKey' => Context::$API_KEY,
+            'appDomain' => env('HOST'),
         ]);
     }
     return redirect("/login?shop=$shop");
@@ -132,5 +132,3 @@ Route::post('/webhooks', function (Request $request) {
         return response()->json(['message' => "Got an exception when handling '$topic' webhook"], 500);
     }
 });
-
-Route::get('/app/{mode}', [AppController::class, 'index'])->where(['mode' => '(enable|disable)']);

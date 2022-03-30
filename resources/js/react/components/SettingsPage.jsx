@@ -1,17 +1,19 @@
 import {React, useState} from "react";
 import {Card, Page, Button, Stack} from '@shopify/polaris';
+import axios from "axios";
 
-function SettingsPage() {
+function SettingsPage(props) {
     const [enabled, setEnabled] = useState(false);
+    const {shopOrigin, appDomain} = props.config;
 
     const enableDisableApp = () => {
-        console.log('clicked');
-        if (enabled) {
-            setEnabled(false)
-        } else {
-            // TODO: make necessary setup
-            setEnabled(true)
-        }
+        let mode = enabled ? 'disable' : 'enable';
+
+        axios.post(`${appDomain}/api/app/${mode}?shop=${shopOrigin}`)
+            .then(res => {
+                console.log(res.data);
+                setEnabled(res.data.enabled)
+            })
     }
 
     return (

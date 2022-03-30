@@ -54,8 +54,9 @@ function AppBridgeApolloProvider({children}) {
 function ExamplePage() {
     return <div>Example Page</div>
 }
-function App({shop, host, apiKey}) {
-    const config = {apiKey: apiKey, shopOrigin: shop, host: host, forceRedirect: true};
+
+function App({shop, host, apiKey, domain}) {
+    const config = {apiKey: apiKey, shopOrigin: shop, host: host, appDomain: domain, forceRedirect: true};
 
     return (
         <BrowserRouter>
@@ -68,7 +69,7 @@ function App({shop, host, apiKey}) {
                             <Switch>
                                 <Route path="/example" component={ExamplePage}/>
                                 <Route path="/products" component={ProductsPage}/>
-                                <Route path="/" component={SettingsPage}/>
+                                <Route path="/" render={(props) => <SettingsPage config={config} {...props} />}/>
                             </Switch>
                         </PageLayout>
                     </AppBridgeApolloProvider>

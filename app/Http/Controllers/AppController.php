@@ -6,7 +6,6 @@ use App\Models\Session;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Shopify\Clients\Rest;
-use Shopify\Utils;
 
 class AppController extends Controller
 {
@@ -48,7 +47,7 @@ class AppController extends Controller
 
         $setting->save();
 
-        return response(['mode' => $mode]);
+        return response(['enabled' => $setting->enabled]);
     }
 
     /**
