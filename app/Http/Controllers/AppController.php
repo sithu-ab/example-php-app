@@ -18,24 +18,30 @@ class AppController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      * @throws \Psr\Http\Client\ClientExceptionInterface
-     * @throws \Shopify\Exception\MissingArgumentException
      * @throws \Shopify\Exception\UninitializedContextException
      */
     public function index(string $mode, Request $request)
     {
-//        $shop = $request->get('shop');
-//        $client = $this->getClient($shop);
-//        $response = $client->get(
-//            'products/count'
-//        );
-//        dd($response->getDecodedBody());
-
-        $file = resource_path() . '/liquid/example-php-app.liquid';
-
         $setting = Setting::firstOrNew(['id' => 1]);
 
         if ($mode == 'enable') {
-            $setting->enabled = true;
+            $shop = $request->get('shop');
+            $file = resource_path() . '/liquid/example-php-app.liquid';
+
+            $client = $this->getClient($shop);
+            $response = $client->put(
+                "themes/123985330233/assets",
+                [
+                    "asset" => [
+                        "key" => "snippets/example-php-app.liquid",
+                        "value" => file_get_contents($file),
+                    ]
+                ]
+            );
+
+            if ($response->getStatusCode() == 200) {
+                $setting->enabled = true;
+            }
         } else {
             $setting->enabled = false;
         }
@@ -45,7 +51,13 @@ class AppController extends Controller
         return response(['mode' => $mode]);
     }
 
-    private function getClient($shop)
+    /**
+     * Get Rest Client
+     * @param string $shop
+     * @return Rest
+     * @throws \Shopify\Exception\MissingArgumentException
+     */
+    private function getClient(string $shop): Rest
     {
         $session = Session::where('shop', $shop)
             ->where('is_online', true)
