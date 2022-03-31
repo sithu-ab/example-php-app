@@ -9,6 +9,8 @@ use Shopify\Clients\Rest;
 
 class AppController extends Controller
 {
+    private const THEME_ID = 123985330233;
+
     /**
      * Enable/Disable app
      *
@@ -24,21 +26,63 @@ class AppController extends Controller
         $setting = Setting::firstOrNew(['id' => 1]);
 
         if ($mode == 'enable') {
-            $shop = $request->get('shop');
-            $file = resource_path() . '/liquid/example-php-app.liquid';
-
+            $error  = false;
+            $shop   = $request->get('shop');
+            $file   = resource_path() . '/liquid/example-php-app.liquid';
             $client = $this->getClient($shop);
+
+            // Insert/Update snippets/example-php-app.liquid into the theme
             $response = $client->put(
-                "themes/123985330233/assets",
+                'themes/' . self::THEME_ID . '/assets',
                 [
-                    "asset" => [
-                        "key" => "snippets/example-php-app.liquid",
-                        "value" => file_get_contents($file),
+                    'asset' => [
+                        'key' => 'snippets/example-php-app.liquid',
+                        'value' => file_get_contents($file),
                     ]
                 ]
             );
 
             if ($response->getStatusCode() == 200) {
+                // Get layout/theme.liquid content
+                $response = $client->get('themes/' . self::THEME_ID . '/assets', [], [
+                    'asset[key]' => 'layout/theme.liquid',
+                ]);
+
+                if ($response->getStatusCode() == 200) {
+                    $body = $response->getDecodedBody();
+                    $value = $body['asset']['value'];
+
+                    // Update layout/theme.liquid content to render snippet
+                    $snippet = "{% render 'example-php-app' %}";
+                    if (!str_contains($value, $snippet)) {
+                        $html = explode('</head>', $value);
+                        $html = $html[0] . PHP_EOL . '    ' . $snippet . PHP_EOL . '</head>' . $html[1];
+
+                        $res = $client->put(
+                            'themes/' . self::THEME_ID . '/assets',
+                            [
+                                'asset' => [
+                                    'key' => 'layout/theme.liquid',
+                                    'value' => $html,
+                                ]
+                            ]
+                        );
+
+                        if ($res->getStatusCode() !== 200) {
+                            // TODO LOG: can't update layout/theme.liquid content to render snippet
+                            $error = true;
+                        }
+                    }
+                } else {
+                    // TODO LOG: can't get layout/theme.liquid content
+                    $error = true;
+                }
+            } else {
+                // TODO LOG: can't insert/update snippets/example-php-app.liquid
+                $error = true;
+            }
+
+            if (!$error) {
                 $setting->enabled = true;
             }
         } else {
